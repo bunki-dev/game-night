@@ -1,0 +1,730 @@
+[
+  {
+    "category": "space",
+    "difficulty": "easy",
+    "prompt": "Which planet is known as the Red Planet?",
+    "options": [
+      "Mars",
+      "Venus",
+      "Jupiter",
+      "Mercury"
+    ],
+    "answer_index": 0,
+    "explanation": "Iron oxide dust gives Mars its reddish colour."
+  },
+  {
+    "category": "space",
+    "difficulty": "easy",
+    "prompt": "What is the largest planet in our solar system?",
+    "options": [
+      "Saturn",
+      "Jupiter",
+      "Neptune",
+      "Earth"
+    ],
+    "answer_index": 1,
+    "explanation": "Jupiter is more than twice as massive as all the other planets combined."
+  },
+  {
+    "category": "space",
+    "difficulty": "medium",
+    "prompt": "Roughly how long does sunlight take to reach Earth?",
+    "options": [
+      "8 seconds",
+      "8 minutes",
+      "8 hours",
+      "8 days"
+    ],
+    "answer_index": 1,
+    "explanation": "About 8 minutes and 20 seconds."
+  },
+  {
+    "category": "space",
+    "difficulty": "medium",
+    "prompt": "Which planet has the shortest year?",
+    "options": [
+      "Venus",
+      "Mars",
+      "Mercury",
+      "Earth"
+    ],
+    "answer_index": 2,
+    "explanation": "Mercury orbits the Sun in about 88 Earth days."
+  },
+  {
+    "category": "science",
+    "difficulty": "easy",
+    "prompt": "What gas do plants absorb from the air for photosynthesis?",
+    "options": [
+      "Oxygen",
+      "Nitrogen",
+      "Carbon dioxide",
+      "Helium"
+    ],
+    "answer_index": 2,
+    "explanation": "Plants take in carbon dioxide and release oxygen."
+  },
+  {
+    "category": "science",
+    "difficulty": "easy",
+    "prompt": "What is the chemical symbol for gold?",
+    "options": [
+      "Go",
+      "Gd",
+      "Au",
+      "Ag"
+    ],
+    "answer_index": 2,
+    "explanation": "Au comes from the Latin aurum."
+  },
+  {
+    "category": "science",
+    "difficulty": "medium",
+    "prompt": "How many bones are in the adult human body?",
+    "options": [
+      "186",
+      "206",
+      "226",
+      "256"
+    ],
+    "answer_index": 1,
+    "explanation": "Babies start with around 300; many fuse as we grow."
+  },
+  {
+    "category": "science",
+    "difficulty": "medium",
+    "prompt": "At sea level, water boils at what temperature in Celsius?",
+    "options": [
+      "90",
+      "100",
+      "110",
+      "120"
+    ],
+    "answer_index": 1,
+    "explanation": "100 degrees Celsius at standard atmospheric pressure."
+  },
+  {
+    "category": "science",
+    "difficulty": "hard",
+    "prompt": "Which element has the atomic number 1?",
+    "options": [
+      "Helium",
+      "Oxygen",
+      "Hydrogen",
+      "Carbon"
+    ],
+    "answer_index": 2,
+    "explanation": "Hydrogen has a single proton."
+  },
+  {
+    "category": "science",
+    "difficulty": "medium",
+    "prompt": "What is the hardest natural substance?",
+    "options": [
+      "Quartz",
+      "Diamond",
+      "Granite",
+      "Steel"
+    ],
+    "answer_index": 1,
+    "explanation": "Diamond scores 10 on the Mohs hardness scale."
+  },
+  {
+    "category": "animals",
+    "difficulty": "easy",
+    "prompt": "What is a baby kangaroo called?",
+    "options": [
+      "Kid",
+      "Joey",
+      "Pup",
+      "Cub"
+    ],
+    "answer_index": 1,
+    "explanation": "Joeys live in their mother's pouch for months."
+  },
+  {
+    "category": "animals",
+    "difficulty": "easy",
+    "prompt": "Which is the fastest land animal?",
+    "options": [
+      "Lion",
+      "Pronghorn",
+      "Cheetah",
+      "Greyhound"
+    ],
+    "answer_index": 2,
+    "explanation": "Cheetahs can sprint at around 100 km/h in short bursts."
+  },
+  {
+    "category": "animals",
+    "difficulty": "medium",
+    "prompt": "How many hearts does an octopus have?",
+    "options": [
+      "One",
+      "Two",
+      "Three",
+      "Four"
+    ],
+    "answer_index": 2,
+    "explanation": "Two pump blood to the gills and one to the rest of the body."
+  },
+  {
+    "category": "animals",
+    "difficulty": "medium",
+    "prompt": "Which Australian animal lays eggs?",
+    "options": [
+      "Wombat",
+      "Koala",
+      "Platypus",
+      "Quokka"
+    ],
+    "answer_index": 2,
+    "explanation": "The platypus and echidnas are monotremes, egg-laying mammals."
+  },
+  {
+    "category": "animals",
+    "difficulty": "hard",
+    "prompt": "What is a group of owls called?",
+    "options": [
+      "A parliament",
+      "A pod",
+      "A pride",
+      "A gaggle"
+    ],
+    "answer_index": 0,
+    "explanation": "A pod is whales or dolphins, a pride is lions and a gaggle is geese."
+  },
+  {
+    "category": "australia",
+    "difficulty": "easy",
+    "prompt": "What is the capital city of Australia?",
+    "options": [
+      "Sydney",
+      "Melbourne",
+      "Canberra",
+      "Perth"
+    ],
+    "answer_index": 2,
+    "explanation": "Canberra was chosen as a compromise between Sydney and Melbourne."
+  },
+  {
+    "category": "australia",
+    "difficulty": "easy",
+    "prompt": "Which reef lies off the coast of Queensland?",
+    "options": [
+      "Ningaloo Reef",
+      "Great Barrier Reef",
+      "Coral Sea Reef",
+      "Belize Barrier Reef"
+    ],
+    "answer_index": 1,
+    "explanation": "It is the world's largest coral reef system."
+  },
+  {
+    "category": "australia",
+    "difficulty": "medium",
+    "prompt": "In which state is Uluru?",
+    "options": [
+      "Western Australia",
+      "South Australia",
+      "Northern Territory",
+      "Queensland"
+    ],
+    "answer_index": 2,
+    "explanation": "Uluru is in Uluru-Kata Tjuta National Park in the Northern Territory."
+  },
+  {
+    "category": "australia",
+    "difficulty": "medium",
+    "prompt": "Which is Australia's smallest state by area?",
+    "options": [
+      "Victoria",
+      "Tasmania",
+      "South Australia",
+      "New South Wales"
+    ],
+    "answer_index": 1,
+    "explanation": "Tasmania is the smallest state; the ACT is a territory."
+  },
+  {
+    "category": "australia",
+    "difficulty": "hard",
+    "prompt": "In what year did the Australian colonies federate?",
+    "options": [
+      "1788",
+      "1851",
+      "1901",
+      "1945"
+    ],
+    "answer_index": 2,
+    "explanation": "Federation took effect on 1 January 1901."
+  },
+  {
+    "category": "australia",
+    "difficulty": "medium",
+    "prompt": "Which city hosted the 2000 Summer Olympics?",
+    "options": [
+      "Melbourne",
+      "Brisbane",
+      "Sydney",
+      "Adelaide"
+    ],
+    "answer_index": 2,
+    "explanation": "Melbourne hosted the 1956 Games; Brisbane will host in 2032."
+  },
+  {
+    "category": "sport",
+    "difficulty": "easy",
+    "prompt": "In cricket, how many balls are in a standard over?",
+    "options": [
+      "Four",
+      "Five",
+      "Six",
+      "Eight"
+    ],
+    "answer_index": 2,
+    "explanation": "Six legal deliveries make an over."
+  },
+  {
+    "category": "sport",
+    "difficulty": "easy",
+    "prompt": "How many players are on a cricket team in the field?",
+    "options": [
+      "9",
+      "10",
+      "11",
+      "12"
+    ],
+    "answer_index": 2,
+    "explanation": "Eleven players a side."
+  },
+  {
+    "category": "sport",
+    "difficulty": "medium",
+    "prompt": "In cricket, what does LBW stand for?",
+    "options": [
+      "Leg before wicket",
+      "Long ball wide",
+      "Last batter walks",
+      "Leg behind wicket"
+    ],
+    "answer_index": 0,
+    "explanation": "A batter is out if the ball would have hit the stumps but hit their leg first."
+  },
+  {
+    "category": "sport",
+    "difficulty": "medium",
+    "prompt": "Which trophy do Australia and England play for in Test cricket?",
+    "options": [
+      "The Ashes",
+      "The Bledisloe Cup",
+      "The Davis Cup",
+      "The Webb Ellis Cup"
+    ],
+    "answer_index": 0,
+    "explanation": "The Bledisloe Cup is rugby between Australia and New Zealand."
+  },
+  {
+    "category": "sport",
+    "difficulty": "easy",
+    "prompt": "How many points is a goal worth in Australian rules football?",
+    "options": [
+      "One",
+      "Three",
+      "Six",
+      "Seven"
+    ],
+    "answer_index": 2,
+    "explanation": "A goal is six points; a behind is one."
+  },
+  {
+    "category": "sport",
+    "difficulty": "medium",
+    "prompt": "How long is a marathon?",
+    "options": [
+      "21.1 km",
+      "32.2 km",
+      "42.2 km",
+      "50 km"
+    ],
+    "answer_index": 2,
+    "explanation": "The official distance is 42.195 km."
+  },
+  {
+    "category": "sport",
+    "difficulty": "hard",
+    "prompt": "In tennis, what is a score of zero called?",
+    "options": [
+      "Nil",
+      "Love",
+      "Duck",
+      "Zip"
+    ],
+    "answer_index": 1,
+    "explanation": "A duck is zero runs in cricket."
+  },
+  {
+    "category": "food",
+    "difficulty": "easy",
+    "prompt": "Which country is the home of sushi?",
+    "options": [
+      "China",
+      "Korea",
+      "Japan",
+      "Thailand"
+    ],
+    "answer_index": 2,
+    "explanation": "Modern sushi developed in Japan."
+  },
+  {
+    "category": "food",
+    "difficulty": "easy",
+    "prompt": "What is the main ingredient in guacamole?",
+    "options": [
+      "Avocado",
+      "Pea",
+      "Cucumber",
+      "Lime"
+    ],
+    "answer_index": 0,
+    "explanation": "Mashed avocado with lime, onion and chilli."
+  },
+  {
+    "category": "food",
+    "difficulty": "medium",
+    "prompt": "Which nut is used to make marzipan?",
+    "options": [
+      "Cashew",
+      "Almond",
+      "Hazelnut",
+      "Pistachio"
+    ],
+    "answer_index": 1,
+    "explanation": "Marzipan is mostly ground almonds and sugar."
+  },
+  {
+    "category": "food",
+    "difficulty": "medium",
+    "prompt": "Saffron comes from which flower?",
+    "options": [
+      "Tulip",
+      "Crocus",
+      "Lily",
+      "Daisy"
+    ],
+    "answer_index": 1,
+    "explanation": "It is the dried stigma of the saffron crocus."
+  },
+  {
+    "category": "food",
+    "difficulty": "hard",
+    "prompt": "Which grain is used to make traditional risotto?",
+    "options": [
+      "Basmati rice",
+      "Arborio rice",
+      "Jasmine rice",
+      "Wild rice"
+    ],
+    "answer_index": 1,
+    "explanation": "Arborio's starch makes risotto creamy."
+  },
+  {
+    "category": "food",
+    "difficulty": "medium",
+    "prompt": "Which fruit has its seeds on the outside?",
+    "options": [
+      "Raspberry",
+      "Strawberry",
+      "Blueberry",
+      "Kiwifruit"
+    ],
+    "answer_index": 1,
+    "explanation": "Those little specks are achenes, each holding a seed."
+  },
+  {
+    "category": "geography",
+    "difficulty": "easy",
+    "prompt": "What is the longest river in Australia?",
+    "options": [
+      "Darling River",
+      "Murray River",
+      "Murrumbidgee River",
+      "Lachlan River"
+    ],
+    "answer_index": 1,
+    "explanation": "The Murray runs about 2,500 km."
+  },
+  {
+    "category": "geography",
+    "difficulty": "easy",
+    "prompt": "Which ocean is the largest?",
+    "options": [
+      "Atlantic",
+      "Indian",
+      "Arctic",
+      "Pacific"
+    ],
+    "answer_index": 3,
+    "explanation": "The Pacific covers about a third of Earth's surface."
+  },
+  {
+    "category": "geography",
+    "difficulty": "medium",
+    "prompt": "What is the capital of Canada?",
+    "options": [
+      "Toronto",
+      "Vancouver",
+      "Ottawa",
+      "Montreal"
+    ],
+    "answer_index": 2,
+    "explanation": "Ottawa, in Ontario."
+  },
+  {
+    "category": "geography",
+    "difficulty": "medium",
+    "prompt": "Which country has the most people?",
+    "options": [
+      "China",
+      "India",
+      "United States",
+      "Indonesia"
+    ],
+    "answer_index": 1,
+    "explanation": "India passed China in 2023, according to UN estimates."
+  },
+  {
+    "category": "geography",
+    "difficulty": "hard",
+    "prompt": "Which is the smallest country in the world by area?",
+    "options": [
+      "Monaco",
+      "Vatican City",
+      "San Marino",
+      "Liechtenstein"
+    ],
+    "answer_index": 1,
+    "explanation": "Vatican City is about 0.44 square kilometres."
+  },
+  {
+    "category": "geography",
+    "difficulty": "medium",
+    "prompt": "What is the tallest mountain above sea level?",
+    "options": [
+      "K2",
+      "Kilimanjaro",
+      "Mount Everest",
+      "Mount Kosciuszko"
+    ],
+    "answer_index": 2,
+    "explanation": "Everest stands about 8,849 metres above sea level."
+  },
+  {
+    "category": "history",
+    "difficulty": "easy",
+    "prompt": "Who was the first person to walk on the Moon?",
+    "options": [
+      "Buzz Aldrin",
+      "Yuri Gagarin",
+      "Neil Armstrong",
+      "John Glenn"
+    ],
+    "answer_index": 2,
+    "explanation": "Neil Armstrong, on 20 July 1969."
+  },
+  {
+    "category": "history",
+    "difficulty": "medium",
+    "prompt": "Which ancient wonder was in Egypt and still stands today?",
+    "options": [
+      "Hanging Gardens",
+      "Colossus of Rhodes",
+      "Great Pyramid of Giza",
+      "Lighthouse of Alexandria"
+    ],
+    "answer_index": 2,
+    "explanation": "It is the only ancient wonder still largely intact."
+  },
+  {
+    "category": "history",
+    "difficulty": "medium",
+    "prompt": "In which year did the Berlin Wall fall?",
+    "options": [
+      "1979",
+      "1985",
+      "1989",
+      "1991"
+    ],
+    "answer_index": 2,
+    "explanation": "The border opened on 9 November 1989."
+  },
+  {
+    "category": "history",
+    "difficulty": "hard",
+    "prompt": "Which civilisation built Machu Picchu?",
+    "options": [
+      "Aztec",
+      "Maya",
+      "Inca",
+      "Olmec"
+    ],
+    "answer_index": 2,
+    "explanation": "The Inca built it in the 15th century."
+  },
+  {
+    "category": "technology",
+    "difficulty": "easy",
+    "prompt": "What does CPU stand for?",
+    "options": [
+      "Central processing unit",
+      "Computer power unit",
+      "Core program utility",
+      "Central program unit"
+    ],
+    "answer_index": 0,
+    "explanation": "The CPU runs a computer's instructions."
+  },
+  {
+    "category": "technology",
+    "difficulty": "medium",
+    "prompt": "What does the 'www' in a web address stand for?",
+    "options": [
+      "World wide web",
+      "Web wide world",
+      "World web wire",
+      "Wide world web"
+    ],
+    "answer_index": 0,
+    "explanation": "The World Wide Web was proposed by Tim Berners-Lee in 1989."
+  },
+  {
+    "category": "technology",
+    "difficulty": "medium",
+    "prompt": "How many bits are in a byte?",
+    "options": [
+      "4",
+      "8",
+      "16",
+      "32"
+    ],
+    "answer_index": 1,
+    "explanation": "Eight bits make one byte."
+  },
+  {
+    "category": "technology",
+    "difficulty": "hard",
+    "prompt": "Which language runs natively in web browsers?",
+    "options": [
+      "Python",
+      "JavaScript",
+      "Java",
+      "C#"
+    ],
+    "answer_index": 1,
+    "explanation": "Browsers also run WebAssembly, but JavaScript is the native scripting language."
+  },
+  {
+    "category": "music",
+    "difficulty": "easy",
+    "prompt": "How many strings does a standard guitar have?",
+    "options": [
+      "Four",
+      "Five",
+      "Six",
+      "Seven"
+    ],
+    "answer_index": 2,
+    "explanation": "Six strings; a standard bass has four."
+  },
+  {
+    "category": "music",
+    "difficulty": "medium",
+    "prompt": "How many keys are on a standard piano?",
+    "options": [
+      "66",
+      "76",
+      "88",
+      "96"
+    ],
+    "answer_index": 2,
+    "explanation": "52 white keys and 36 black keys."
+  },
+  {
+    "category": "music",
+    "difficulty": "medium",
+    "prompt": "Which instrument is a didgeridoo traditionally made from?",
+    "options": [
+      "Bamboo",
+      "Termite-hollowed eucalyptus",
+      "Clay",
+      "Whale bone"
+    ],
+    "answer_index": 1,
+    "explanation": "Termites hollow out eucalyptus branches in northern Australia."
+  },
+  {
+    "category": "general knowledge",
+    "difficulty": "easy",
+    "prompt": "How many days are in a leap year?",
+    "options": [
+      "364",
+      "365",
+      "366",
+      "367"
+    ],
+    "answer_index": 2,
+    "explanation": "February gets a 29th day."
+  },
+  {
+    "category": "general knowledge",
+    "difficulty": "easy",
+    "prompt": "What colour do you get by mixing blue and yellow paint?",
+    "options": [
+      "Purple",
+      "Green",
+      "Orange",
+      "Brown"
+    ],
+    "answer_index": 1,
+    "explanation": "Blue and yellow are subtractive primaries that make green."
+  },
+  {
+    "category": "general knowledge",
+    "difficulty": "medium",
+    "prompt": "How many sides does a hexagon have?",
+    "options": [
+      "Five",
+      "Six",
+      "Seven",
+      "Eight"
+    ],
+    "answer_index": 1,
+    "explanation": "Hex means six."
+  },
+  {
+    "category": "general knowledge",
+    "difficulty": "medium",
+    "prompt": "Which is the most spoken native language in the world?",
+    "options": [
+      "English",
+      "Spanish",
+      "Mandarin Chinese",
+      "Hindi"
+    ],
+    "answer_index": 2,
+    "explanation": "English has more total speakers, but Mandarin has the most native speakers."
+  },
+  {
+    "category": "general knowledge",
+    "difficulty": "medium",
+    "prompt": "How many minutes are in a full day?",
+    "options": [
+      "1,200",
+      "1,440",
+      "1,600",
+      "2,400"
+    ],
+    "answer_index": 1,
+    "explanation": "24 hours times 60 minutes."
+  }
+]
