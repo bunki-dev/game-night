@@ -76,6 +76,9 @@ button { cursor: pointer; }
   mask: radial-gradient(circle 10px at 0 50%, #0000 98%, #000) left / 51% 100% no-repeat,
     radial-gradient(circle 10px at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat;
 }
+.ticket:not(.ticket-compact) { display: flex; align-items: center; gap: 1.2vw; padding: 0.7em 1.4em 0.7em 0.9em; }
+.ticket-text { display: grid; justify-items: center; }
+.ticket-qr { width: clamp(90px, 9vw, 170px); height: auto; border-radius: 6px; }
 .ticket-label { font-size: clamp(0.8rem, 1.1vw, 1rem); color: #5b574c; }
 .ticket-url { font-weight: 700; font-size: clamp(1rem, 1.6vw, 1.4rem); }
 .ticket-code { font-family: var(--display); font-size: clamp(2.2rem, 5vw, 4.4rem); letter-spacing: 0.12em; line-height: 1; color: var(--red); }

@@ -2,7 +2,9 @@
 
 Party games on the TV, played from everyone's phones, run by an **AI game master**.
 
-The TV (or any laptop) shows the table. Players open the site on their phones, type the four-letter room code and get a controller. Two games so far:
+**Play it: https://game-night-nq9e.onrender.com** (open it on a laptop or TV, then scan the QR code with your phone; the free server takes about a minute to wake up the first time)
+
+The TV (or any laptop) shows the table. Players scan the QR code or type the four-letter room code on their phones and get a controller. Two games so far:
 
 - **Trivia**: the AI writes questions on whatever topics the room picks ("cricket", "90s cartoons"), checks them, and scores fast correct answers higher.
 - **Hot Take**: everyone finishes a prompt like *"A terrible name for a family car"*. An AI judge scores each answer out of 10 with a one-line comment, and the best answer earns a bonus.
@@ -86,7 +88,7 @@ flowchart LR
 | `src/gamenight/gamemaster.py` | AI and offline game masters: generation, verification, judging, fallbacks. |
 | `src/gamenight/safety.py` | Profanity masking, family-mode topic filter, bribe detection. |
 | `src/gamenight/app.py` | WebSocket server: handshake, per-room locks, rate limits, broadcast clock. |
-| `web/` | React + TypeScript: landing page, TV screen, phone controller. |
+| `web/` | React + TypeScript: landing page, TV screen, phone controller, and a dependency-free QR encoder (`qr.ts`, tested by decoding with OpenCV). |
 | `evals/` | Judge agreement and trivia quality evals with hand-labelled cases. |
 
 ### Scaling
@@ -96,7 +98,7 @@ Rooms live in memory in one process, which is plenty for a living room and keeps
 ## Next up
 
 - **Fitness challenge:** in-browser pose detection on the phone camera counts squats and push-ups in a race. It pairs with [FitBasket](https://github.com/bunki-dev/fitbasket)'s workout plans.
-- QR code on the TV for joining, sound effects, and more games.
+- Sound effects, team mode and more games.
 
 ## Licence
 

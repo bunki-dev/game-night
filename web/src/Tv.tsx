@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRoom, type RoomState } from "./net";
+import { qrMatrix } from "./qr";
 import { Countdown, Suit, Token, useRemoteNavigation } from "./ui";
 
 const TOPICS = ["general knowledge", "sport", "Australia", "space", "animals", "food", "science", "geography", "history", "music"];
@@ -50,14 +51,35 @@ export function Tv({ code, token }: { code: string; token: string }) {
 
 function JoinTicket({ code, compact }: { code: string; compact: boolean }) {
   const url = `${location.host}`;
+  const joinUrl = `${location.origin}${location.pathname}#/play/${code}`;
   return (
     <div className={`ticket${compact ? " ticket-compact" : ""}`}>
-      {!compact && <span className="ticket-label">Join on your phone at</span>}
-      {!compact && <span className="ticket-url">{url}</span>}
-      <span className="ticket-code" aria-label={`Room code ${code.split("").join(" ")}`}>
-        {code}
-      </span>
+      {!compact && <QrCode text={joinUrl} />}
+      <div className="ticket-text">
+        {!compact && <span className="ticket-label">Scan, or go to</span>}
+        {!compact && <span className="ticket-url">{url}</span>}
+        <span className="ticket-code" aria-label={`Room code ${code.split("").join(" ")}`}>
+          {code}
+        </span>
+      </div>
     </div>
+  );
+}
+
+function QrCode({ text }: { text: string }) {
+  const matrix = useMemo(() => qrMatrix(text), [text]);
+  const n = matrix.length + 8; // 4-module quiet zone on each side
+  let d = "";
+  matrix.forEach((row, y) =>
+    row.forEach((dark, x) => {
+      if (dark) d += `M${x + 4} ${y + 4}h1v1h-1z`;
+    }),
+  );
+  return (
+    <svg className="ticket-qr" viewBox={`0 0 ${n} ${n}`} role="img" aria-label="QR code to join this game">
+      <rect width={n} height={n} fill="#fff" />
+      <path d={d} fill="#1d1d1b" shapeRendering="crispEdges" />
+    </svg>
   );
 }
 
