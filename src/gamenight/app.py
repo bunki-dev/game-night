@@ -175,5 +175,19 @@ async def _hello(ws: WebSocket, room: Room) -> Conn:
 
 
 _dist = Path(os.getenv("GAMENIGHT_WEB_DIST", Path(__file__).resolve().parents[2] / "web" / "dist"))
+
+
+class _Web(StaticFiles):
+    """The page itself is always revalidated so TVs and phones pick up new versions; hashed assets cache forever."""
+
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        if path.startswith("assets/"):
+            response.headers["cache-control"] = "public, max-age=31536000, immutable"
+        else:
+            response.headers["cache-control"] = "no-cache"
+        return response
+
+
 if _dist.is_dir():
-    app.mount("/", StaticFiles(directory=_dist, html=True), name="web")
+    app.mount("/", _Web(directory=_dist, html=True), name="web")
