@@ -4,10 +4,13 @@ Party games on the TV, played from everyone's phones, run by an **AI game master
 
 **Play it: https://game-night-nq9e.onrender.com** (open it on a laptop or TV, then scan the QR code with your phone; the free server takes about a minute to wake up the first time)
 
-The TV (or any laptop) shows the table. Players scan the QR code or type the four-letter room code on their phones and get a controller. Two games so far:
+The TV (or any laptop) shows the table and a big QR code. Players scan it with their phone camera (or type the four-letter room code) and get a controller. Five games:
 
 - **Trivia**: the AI writes questions on whatever topics the room picks ("cricket", "90s cartoons"), checks them, and scores fast correct answers higher.
 - **Hot Take**: everyone finishes a prompt like *"A terrible name for a family car"*. An AI judge scores each answer out of 10 with a one-line comment, and the best answer earns a bonus.
+- **Fake Out**: a true but surprising fact appears with a blank (*"A group of flamingos is called a ___"*). Everyone writes a believable fake, then picks the truth from the lot. Finding the truth scores 500; every friend your fake fools scores you 250.
+- **Most Likely To**: *"Who's most likely to befriend a magpie?"* Everyone votes for someone in the room; voting with the crowd scores 300. Needs three or more players.
+- **Emoji Decode**: a film, song, TV show or saying in emoji (🦁👑). One guess each, typo-tolerant matching, and faster right answers score more.
 
 ![Trivia on the TV](docs/tv-question.png)
 
@@ -26,6 +29,13 @@ Model output is treated as untrusted input, from generation through to judging.
 - Answer options are shuffled on the server, because models tend to put the right answer first.
 - **Self-consistency check:** a second, low-temperature call answers each question blind with the options reshuffled. Questions the model can't answer consistently are dropped. It's a cheap guard against confidently wrong "facts".
 - If too few questions survive, the game tops up from a curated offline bank, so a bad reply never stalls the room.
+
+**Fake Out, Emoji Decode and Most Likely To**
+- Fake Out facts must have exactly one blank and can't contain their own answer. A blind second pass fills each blank, and facts the model can't answer the same way twice are dropped.
+- A fake that matches the real answer (typos and "the" included) is rejected with a nudge to write a lie instead. Fakes are restyled to match the truth's form, so "a kerfuffle" next to "hands" doesn't give the game away.
+- Emoji puzzles must be emoji only (no letters or numbers sneaking in a hint). Guesses are matched forgivingly: case, punctuation, a leading "the" and small typos on longer answers.
+- Most Likely To prompts are generated to be playful and never about appearance, money, health or relationships, then safety-checked.
+- Every game falls back to a curated offline bank, so all five work without an API key.
 
 **Judging Hot Take**
 - The judge sees **anonymous, shuffled** answers (A, B, C…), so player names and answer order can't bias it.
@@ -98,7 +108,7 @@ Rooms live in memory in one process, which is plenty for a living room and keeps
 ## Next up
 
 - **Fitness challenge:** in-browser pose detection on the phone camera counts squats and push-ups in a race. It pairs with [FitBasket](https://github.com/bunki-dev/fitbasket)'s workout plans.
-- Sound effects, team mode and more games.
+- Sound effects and team mode.
 
 ## Licence
 

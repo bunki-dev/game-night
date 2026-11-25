@@ -78,7 +78,7 @@ button { cursor: pointer; }
 }
 .ticket:not(.ticket-compact) { display: flex; align-items: center; gap: 1.2vw; padding: 0.7em 1.4em 0.7em 0.9em; }
 .ticket-text { display: grid; justify-items: center; }
-.ticket-qr { width: clamp(90px, 9vw, 170px); height: auto; border-radius: 6px; }
+.ticket-qr { width: clamp(150px, 15vw, 280px); height: auto; border-radius: 6px; }
 .ticket-label { font-size: clamp(0.8rem, 1.1vw, 1rem); color: #5b574c; }
 .ticket-url { font-weight: 700; font-size: clamp(1rem, 1.6vw, 1.4rem); }
 .ticket-code { font-family: var(--display); font-size: clamp(2.2rem, 5vw, 4.4rem); letter-spacing: 0.12em; line-height: 1; color: var(--red); }
@@ -223,4 +223,46 @@ button { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   .shuffle span { animation: none; }
   .countdown-fill { transition: none; }
+}
+
+/* ---------- more games ---------- */
+.game-boxes { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+.game-box-min { font-size: clamp(0.75rem, 1.1vw, 1rem); opacity: 0.7; font-weight: 700; }
+.card-emoji { text-align: center; }
+.emoji-line { margin: 0; font-size: clamp(3.5rem, 10vw, 9rem); line-height: 1.1; letter-spacing: 0.08em; }
+.bluffs { list-style: none; margin: 0; padding: 0; width: min(86vw, 1200px); display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.6vh 1.6vw; }
+.bluff { padding: 1.6vh 1.4vw; background: var(--card); color: var(--ink); border-radius: 14px; transform: rotate(var(--tilt)); box-shadow: 0 6px 0 var(--felt-deep); font-weight: 700; font-size: clamp(1.1rem, 2.2vw, 2rem); text-align: center; }
+.lineup { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 2vw; }
+.who { display: inline-flex; align-items: center; gap: 0.3em; margin-right: 0.6em; font-weight: 700; }
+.crowned { display: grid; justify-items: center; gap: 1vh; }
+.tally { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6vh 2vw; font-size: clamp(1rem, 1.6vw, 1.4rem); }
+.vote-list { display: grid; gap: 0.7rem; padding: 1rem; }
+.vote-btn { padding: 1rem; border: 3px solid var(--ink); border-radius: 14px; background: var(--card); color: var(--ink); font-weight: 700; font-size: 1.15rem; text-align: left; display: flex; align-items: center; gap: 0.6rem; box-shadow: 0 5px 0 var(--felt-deep); }
+.vote-btn:disabled { opacity: 0.45; }
+.vote-btn small { font-weight: 400; }
+.write-emoji { margin: 0; font-size: 4rem; text-align: center; line-height: 1.1; }
+.write input { padding: 0.8rem; border: 3px solid var(--ink); border-radius: 12px; background: #fff; font-size: 1.15rem; }
+
+/* The TV page on a narrow window (laptop split screen, phone preview): stack the header. */
+@media (max-width: 760px) {
+  .tv-head { flex-wrap: wrap; }
+  .tv-head .ticket { position: static; margin-left: auto; }
+  .options { grid-template-columns: 1fr; }
+}
+
+/* Lobby: game picker on the left, a big join ticket with the QR code on the right. */
+.tv > .stage.lobby { overflow-y: auto; }
+.stage.lobby { grid-template-columns: minmax(0, 1fr) auto; align-content: start; align-items: center; justify-items: stretch; gap: 3vw; padding: 1vh 0 2vh; }
+.lobby .lobby-pick { width: auto; order: 1; }
+.lobby-join { order: 2; display: grid; justify-items: center; gap: 1.6vh; }
+.lobby-join .ticket { margin: 0; flex-direction: column; padding: 1.6vh 1.6vw 2vh; transform: rotate(1.5deg); }
+.lobby-join .ticket-qr { width: clamp(180px, 19vw, 340px); }
+.lobby-join-note { margin: 0; color: var(--chalk); text-align: center; max-width: 22ch; font-size: clamp(0.95rem, 1.4vw, 1.25rem); }
+.lobby .game-boxes { grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 1vw; }
+.lobby .game-box { padding: 1.4vh 1.2vw; }
+.lobby .game-box-title { font-size: clamp(1.2rem, 2vw, 1.9rem); }
+.lobby .game-box-sub { font-size: clamp(0.8rem, 1.05vw, 1rem); }
+@media (max-width: 900px) {
+  .stage.lobby { grid-template-columns: 1fr; }
+  .lobby-join { order: 0; }
 }

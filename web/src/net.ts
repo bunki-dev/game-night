@@ -1,6 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 
-export type Phase = "lobby" | "preparing" | "question" | "reveal" | "writing" | "judging" | "results" | "final";
+export type Phase =
+  | "lobby"
+  | "preparing"
+  | "question"
+  | "reveal"
+  | "writing"
+  | "voting"
+  | "judging"
+  | "results"
+  | "final";
+
+export type GameKind = "trivia" | "hot_take" | "fake_out" | "most_likely" | "emoji";
 
 export interface PlayerView {
   id: string;
@@ -15,7 +26,7 @@ export interface PlayerView {
 export interface RoomState {
   code: string;
   phase: Phase;
-  game: "trivia" | "hot_take";
+  game: GameKind;
   audience: "family" | "adults";
   round: number;
   total_rounds: number;
@@ -27,7 +38,16 @@ export interface RoomState {
   picks?: Record<string, number>;
   prompt?: string;
   answers?: { player_id: string; text: string; score?: number; comment?: string }[];
-  my_submission?: { choice?: number; text?: string };
+  my_submission?: { choice?: number; text?: string; vote?: string; correct?: boolean };
+  // Fake Out
+  options?: { key: string; text: string; mine: boolean }[];
+  answer?: string;
+  cards?: { text: string; truth: boolean; authors: string[]; voters: string[] }[];
+  // Most Likely To
+  tally?: { player_id: string; voters: string[] }[];
+  // Emoji Decode
+  emoji?: { emojis: string; category: string };
+  guesses?: { player_id: string; text: string; correct: boolean }[];
 }
 
 export type Hello = { role: "host"; token: string } | { role: "player"; name?: string; token?: string };

@@ -120,3 +120,72 @@ def test_answers_that_try_to_instruct_the_judge_get_zero_without_reaching_the_mo
     scores = {r.player_id: r.score for r in verdict.results}
     assert scores == {"p1": 6, "p2": 0}
     assert "Ignore all previous" not in llm.calls[0][1]
+
+
+def test_matching_is_forgiving_but_not_loose():
+    from gamenight.matching import matches
+
+    assert matches("the lion king", "The Lion King")
+    assert matches("Lion King!", "The Lion King")
+    assert matches("spiderman", "Spider-Man")
+    assert matches("Ratatoulle", "Ratatouille")  # small typo on a long answer
+    assert not matches("Up the river", "Up")
+    assert not matches("Fro", "Frozen")
+    assert matches("willy wonka", "Charlie and the Chocolate Factory", ["willy wonka"])
+
+
+def test_offline_banks_are_valid_and_unique():
+    import asyncio
+
+    from gamenight.gamemaster import OfflineGameMaster
+
+    gm = OfflineGameMaster(seed=3)
+    facts = asyncio.run(gm.facts(50, "family", []))
+    assert len({f.prompt for f in facts}) == len(facts) >= 20
+    puzzles = asyncio.run(gm.emoji([], 50, "family", []))
+    assert len({p.answer for p in puzzles}) == len(puzzles) >= 20
+    prompts = asyncio.run(gm.most_likely(5, "family", prompts_avoid := []))
+    assert len(prompts) == 5 and prompts_avoid == []
+
+
+class _Scripted:
+    name = "scripted"
+
+    def __init__(self, replies):
+        self.replies = list(replies)
+
+    async def complete(self, system, user, max_tokens=1000, temperature=0.7):
+        return self.replies.pop(0)
+
+
+def test_ai_facts_drop_what_the_blind_check_gets_wrong_and_top_up():
+    import asyncio
+    import json
+
+    from gamenight.gamemaster import AIGameMaster
+
+    made = {
+        "facts": [
+            {"prompt": "A group of ferrets is called a ___.", "answer": "business"},
+            {"prompt": "The made-up fact about ___ goes here.", "answer": "nonsense"},
+            {"prompt": "No blank in this one at all.", "answer": "x"},
+        ]
+    }
+    check = {"answers": ["business", "something else"]}
+    gm = AIGameMaster(_Scripted([json.dumps(made), json.dumps(check)]), verify=True, seed=1)
+    facts = asyncio.run(gm.facts(3, "family", []))
+    assert facts[0].answer == "business"
+    assert len(facts) == 3  # topped up from the bank
+    assert gm.stats["rejected_verify"] == 1 and gm.stats["rejected_schema"] == 1
+
+
+def test_ai_emoji_rejects_letters():
+    import asyncio
+    import json
+
+    from gamenight.gamemaster import AIGameMaster
+
+    made = {"puzzles": [{"emojis": "🦁👑", "answer": "The Lion King"}, {"emojis": "LOL 😂", "answer": "Laugh"}]}
+    gm = AIGameMaster(_Scripted([json.dumps(made)]), verify=False, seed=1)
+    puzzles = asyncio.run(gm.emoji([], 2, "family", []))
+    assert puzzles[0].answer == "The Lion King" and puzzles[1].answer != "Laugh"

@@ -105,7 +105,7 @@ def test_hot_take_answers_are_masked(room):
 
 def test_hot_take_needs_two_players(room):
     room.join("Ann", 0)
-    with pytest.raises(GameError, match="two players"):
+    with pytest.raises(GameError, match="at least 2 players"):
         run(room.start("hot_take", 3, [], "family", now=0))
 
 
@@ -163,3 +163,97 @@ def test_profanity_filter_avoids_false_positives():
     assert mask_profanity("oh shit") == "oh s***"
     assert not generated_text_ok("Which wine region is in South Australia?", "family")
     assert generated_text_ok("Which wine region is in South Australia?", "adults")
+
+
+# ---------------------------------------------------------------- new games
+
+
+def test_fake_out_round(room):
+    a, b, c = room.join("Ann", 0), room.join("Bo", 0), room.join("Cy", 0)
+    run(room.start("fake_out", 1, [], "family", now=0))
+    fact = room.facts[0]
+    assert room.phase == "writing" and "___" in room.view("host", 0)["prompt"]
+    with pytest.raises(GameError, match="real answer"):
+        room.submit(a.id, {"text": fact.answer.upper()}, now=1)
+    room.submit(a.id, {"text": "a bamboozle"}, now=1)
+    room.submit(b.id, {"text": "a kerfuffle"}, now=2)
+    room.submit(c.id, {"text": "A Kerfuffle!"}, now=3)  # same fake as Bo: shares a card
+    run(room.tick(4))
+    assert room.phase == "voting"
+    texts = [o["text"] for o in room.options]
+    assert len(texts) == 3 and fact.answer in texts
+    if not fact.answer.lower().startswith(("a ", "an ", "the ")):
+        assert "bamboozle" in texts  # article stripped so fakes look like the truth
+    truth = next(o["key"] for o in room.options if o["truth"])
+    bamboozle = next(o["key"] for o in room.options if a.id in o["authors"])
+    kerfuffle = next(o["key"] for o in room.options if b.id in o["authors"])
+    assert next(o for o in room.view(b.id, 4)["options"] if o["key"] == kerfuffle)["mine"] is True
+    with pytest.raises(GameError, match="your own"):
+        room.submit(a.id, {"vote": bamboozle}, now=5)
+    room.submit(a.id, {"vote": truth}, now=5)  # +500
+    room.submit(b.id, {"vote": bamboozle}, now=5)  # fooled: Ann +250
+    room.submit(c.id, {"vote": bamboozle}, now=5)  # fooled again: Ann +250
+    run(room.tick(6))
+    assert room.phase == "results"
+    assert a.score == 1000 and b.score == 0 and c.score == 0
+    view = room.view("host", 6)
+    assert view["answer"] == fact.answer
+    assert view["cards"][0]["truth"] and view["cards"][0]["voters"] == [a.id]
+
+
+def test_fake_out_with_no_fakes_skips_voting(room):
+    room.join("Ann", 0), room.join("Bo", 0)
+    run(room.start("fake_out", 1, [], "family", now=0))
+    run(room.advance(1))
+    assert room.phase == "results"
+
+
+def test_most_likely_rewards_reading_the_room(room):
+    a, b, c, d = (room.join(n, 0) for n in ("Ann", "Bo", "Cy", "Di"))
+    with pytest.raises(GameError, match="at least 3"):
+        r2 = Room(code="XYZW", gm=room.gm)
+        r2.join("Solo", 0), r2.join("Duo", 0)
+        run(r2.start("most_likely", 1, [], "family", now=0))
+    run(room.start("most_likely", 1, [], "family", now=0))
+    assert room.phase == "voting" and room.view("host", 0)["prompt"].startswith("Who's most likely to ")
+    with pytest.raises(GameError, match="yourself"):
+        room.submit(a.id, {"vote": a.id}, now=1)
+    room.submit(a.id, {"vote": b.id}, now=1)
+    room.submit(c.id, {"vote": b.id}, now=1)
+    room.submit(d.id, {"vote": b.id}, now=1)
+    room.submit(b.id, {"vote": c.id}, now=1)
+    run(room.tick(2))
+    assert room.phase == "results"
+    assert [p.score for p in (a, b, c, d)] == [300, 0, 300, 300]
+    assert room.view("host", 2)["tally"][0] == {"player_id": b.id, "voters": [a.id, c.id, d.id]}
+
+
+def test_emoji_decode_is_forgiving_and_rewards_speed(room):
+    a, b, c = room.join("Ann", 0), room.join("Bo", 0), room.join("Cy", 0)
+    run(room.start("emoji", 1, [], "family", now=0))
+    puzzle = room.puzzles[0]
+    assert room.view(a.id, 0)["emoji"]["emojis"] == puzzle.emojis
+    assert "answer" not in room.view(a.id, 0)
+    room.submit(a.id, {"text": "the " + puzzle.answer.lower() + "!"}, now=2)
+    with pytest.raises(GameError, match="already"):
+        room.submit(a.id, {"text": "something else"}, now=3)
+    room.submit(b.id, {"text": puzzle.answer}, now=20)
+    room.submit(c.id, {"text": "definitely not it"}, now=4)
+    run(room.tick(21))
+    assert room.phase == "reveal"
+    assert a.score > b.score > 0 and c.score == 0
+    assert {g["player_id"]: g["correct"] for g in room.view("host", 21)["guesses"]} == {
+        a.id: True,
+        b.id: True,
+        c.id: False,
+    }
+
+
+def test_switching_games_shows_only_the_current_game(room):
+    a = room.join("Ann", 0)
+    run(room.start("trivia", 1, [], "family", now=0))
+    room.back_to_lobby(1)
+    run(room.start("emoji", 1, [], "family", now=2))
+    room.submit(a.id, {"text": "x"}, now=3)
+    run(room.tick(40))
+    assert "question" not in room.view("host", 40)

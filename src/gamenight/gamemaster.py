@@ -23,7 +23,8 @@ from importlib import resources
 from pydantic import ValidationError
 
 from .llm import LLM, extract_json
-from .models import Audience, JudgedAnswer, Judgement, Question
+from .matching import matches
+from .models import Audience, EmojiPuzzle, Fact, JudgedAnswer, Judgement, Question
 from .safety import generated_text_ok, looks_like_injection
 
 
@@ -55,6 +56,24 @@ class OfflineGameMaster:
         self.rng = random.Random(seed)
         self.bank = [Question(**q) for q in _load("trivia_bank.json")]
         self.prompt_bank: list[str] = _load("hot_take_prompts.json")
+        self.fact_bank = [Fact(**f) for f in _load("fake_out_bank.json")]
+        self.emoji_bank = [EmojiPuzzle(**e) for e in _load("emoji_bank.json")]
+        self.likely_bank: list[str] = _load("most_likely_prompts.json")
+
+    def _fresh(self, items: list, key, n: int, avoid: list[str]) -> list:
+        seen = {_norm(a) for a in avoid}
+        pool = [x for x in items if _norm(key(x)) not in seen] or list(items)
+        self.rng.shuffle(pool)
+        return pool[:n]
+
+    async def facts(self, n: int, audience: Audience, avoid: list[str]) -> list[Fact]:
+        return self._fresh(self.fact_bank, lambda f: f.prompt, n, avoid)
+
+    async def emoji(self, topics: list[str], n: int, audience: Audience, avoid: list[str]) -> list[EmojiPuzzle]:
+        return self._fresh(self.emoji_bank, lambda e: e.answer, n, avoid)
+
+    async def most_likely(self, n: int, audience: Audience, avoid: list[str]) -> list[str]:
+        return self._fresh(self.likely_bank, lambda p: p, n, avoid)
 
     def bank_questions(self, topics: list[str], n: int, avoid: list[str]) -> list[Question]:
         seen = {_norm(a) for a in avoid}
@@ -144,7 +163,138 @@ Audience "family": keep comments clean; give a low score to rude answers.
 Reply with JSON only: {"results": [{"label": "A", "score": 0-10, "comment": str}]}"""
 
 
-class AIGameMaster:
+FACTS_SYSTEM = """You write rounds for a bluffing party game. Each round is a TRUE, surprising, well-established
+fact with one key word or short phrase replaced by ___ . Players invent fake answers to fool each other, so
+the real answer should sound unlikely but be verifiably true (animal names, odd origins, record-free facts).
+Rules:
+- Only facts you are certain of and that will not change. No current events, prices or records.
+- Exactly one ___ per fact. The answer is 1-3 words and must not appear in the sentence.
+- List common alternative spellings of the answer in "aliases".
+- Audience "family": suitable for kids.
+Reply with JSON only: {"facts": [{"prompt": str, "answer": str, "aliases": [str]}]}"""
+
+FACT_CHECK_SYSTEM = """Fill in each blank with the true answer, in 1-3 words. Reply with JSON only:
+{"answers": [answer for fact 1, answer for fact 2, ...]}"""
+
+EMOJI_SYSTEM = """You write puzzles for an emoji guessing game: a well-known film, song, TV show or saying written
+as 2-5 emoji. Players type what it is. Use famous titles a mixed Australian living room would know.
+Rules: emoji only in "emojis" (no letters or numbers), answer is the exact title or saying, list common
+alternative names in "aliases". Category is one of film, song, tv show, saying, place, book.
+Audience "family": suitable for kids.
+Reply with JSON only: {"puzzles": [{"emojis": str, "answer": str, "aliases": [str], "category": str}]}"""
+
+LIKELY_SYSTEM = """You write prompts for a party game: "Who's most likely to ...?". Everyone votes for someone in the
+room. Write the part after "to": playful, flattering or harmless, never about appearance, money troubles,
+health, relationships or anything that could embarrass or hurt someone. Under 10 words.
+Reply with JSON only: {"prompts": [str]}"""
+
+
+class _ContentMixin:
+    """AI-written content for Fake Out, Emoji Decode and Most Likely To, checked and topped up from the bank."""
+
+    llm: LLM
+    rng: random.Random
+    fallback: OfflineGameMaster
+    stats: dict
+    verify: bool
+
+    async def _ask(self, system: str, user: str, key: str) -> list:
+        try:
+            raw = extract_json(await self.llm.complete(system, user, max_tokens=2000))
+            items = raw.get(key, [])
+            return items if isinstance(items, list) else []
+        except Exception:
+            return []
+
+    async def facts(self, n: int, audience: Audience, avoid: list[str]) -> list[Fact]:
+        items = await self._ask(
+            FACTS_SYSTEM,
+            f"Audience: {audience}\nNumber of facts: {n + 3}\nNot these: {json.dumps(avoid[-40:])}",
+            "facts",
+        )
+        seen = {_norm(a) for a in avoid}
+        out: list[Fact] = []
+        for item in items:
+            self.stats["generated"] += 1
+            try:
+                f = Fact(**item)
+            except (ValidationError, TypeError):
+                self.stats["rejected_schema"] += 1
+                continue
+            if not generated_text_ok(f"{f.prompt} {f.answer}", audience) or _norm(f.prompt) in seen:
+                self.stats["rejected_safety"] += 1
+                continue
+            seen.add(_norm(f.prompt))
+            out.append(f)
+        if self.verify and out:
+            out = await self._check_facts(out)
+        out = out[:n]
+        if len(out) < n:
+            self.stats["fallback"] += n - len(out)
+            out += await self.fallback.facts(n - len(out), audience, avoid + [f.prompt for f in out])
+        return out
+
+    async def _check_facts(self, facts: list[Fact]) -> list[Fact]:
+        """Fill each blank blind; keep only facts the model answers the same way twice."""
+        listing = "\n".join(f"{i + 1}. {f.prompt}" for i, f in enumerate(facts))
+        try:
+            raw = extract_json(await self.llm.complete(FACT_CHECK_SYSTEM, listing, max_tokens=500, temperature=0))
+            answers = raw.get("answers", [])
+            if not isinstance(answers, list):
+                return facts
+        except Exception:
+            return facts
+        kept = []
+        for f, a in zip(facts, answers + [""] * len(facts), strict=False):
+            if matches(str(a), f.answer, f.aliases, threshold=0.8):
+                kept.append(f)
+            else:
+                self.stats["rejected_verify"] += 1
+        return kept
+
+    async def emoji(self, topics: list[str], n: int, audience: Audience, avoid: list[str]) -> list[EmojiPuzzle]:
+        user = (
+            f"Audience: {audience}\nThemes (optional): {', '.join(topics)}\nNumber of puzzles: {n + 3}\n"
+            f"Not these: {json.dumps(avoid[-40:])}"
+        )
+        seen = {_norm(a) for a in avoid}
+        out: list[EmojiPuzzle] = []
+        for item in await self._ask(EMOJI_SYSTEM, user, "puzzles"):
+            self.stats["generated"] += 1
+            try:
+                p = EmojiPuzzle(**item)
+            except (ValidationError, TypeError):
+                self.stats["rejected_schema"] += 1
+                continue
+            if not generated_text_ok(p.answer, audience) or _norm(p.answer) in seen:
+                self.stats["rejected_safety"] += 1
+                continue
+            seen.add(_norm(p.answer))
+            out.append(p)
+        out = out[:n]
+        if len(out) < n:
+            self.stats["fallback"] += n - len(out)
+            out += await self.fallback.emoji(topics, n - len(out), audience, avoid + [p.answer for p in out])
+        return out
+
+    async def most_likely(self, n: int, audience: Audience, avoid: list[str]) -> list[str]:
+        seen = {_norm(a) for a in avoid}
+        out: list[str] = []
+        for item in await self._ask(
+            LIKELY_SYSTEM, f"Audience: {audience}\nNumber: {n + 2}\nNot these: {json.dumps(avoid[-40:])}", "prompts"
+        ):
+            text = re.sub(r"^(who'?s )?(most likely )?to ", "", str(item).strip().rstrip("?"), flags=re.I)
+            if 5 <= len(text) <= 80 and generated_text_ok(text, "family") and _norm(text) not in seen:
+                seen.add(_norm(text))
+                out.append(text)
+        out = out[:n]
+        if len(out) < n:
+            self.stats["fallback"] += n - len(out)
+            out += await self.fallback.most_likely(n - len(out), audience, avoid + out)
+        return out
+
+
+class AIGameMaster(_ContentMixin):
     def __init__(self, llm: LLM, verify: bool | None = None, seed: int | None = None):
         self.llm = llm
         self.name = llm.name

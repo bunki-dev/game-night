@@ -7,18 +7,23 @@ Everything time-related takes `now` as an argument, and all content comes from a
 from __future__ import annotations
 
 import random
+import re
 import secrets
 from dataclasses import dataclass, field
 from typing import Literal, Protocol
 
-from .models import Audience, GameKind, Judgement, Question
+from .matching import matches, normalise
+from .models import MIN_PLAYERS, Audience, EmojiPuzzle, Fact, GameKind, Judgement, Question
 from .safety import clean_name, mask_profanity
 
-Phase = Literal["lobby", "preparing", "question", "reveal", "writing", "judging", "results", "final"]
+Phase = Literal["lobby", "preparing", "question", "reveal", "writing", "voting", "judging", "results", "final"]
 
 MAX_PLAYERS = 10
 QUESTION_SECONDS = 20
 WRITING_SECONDS = 60
+FAKE_SECONDS = 45
+EMOJI_SECONDS = 30
+VOTING_SECONDS = 25
 REVEAL_SECONDS = 8
 RESULTS_SECONDS = 12
 TOKENS = ["#e4572e", "#2e86ab", "#f3a712", "#29bf12", "#a23b72", "#00a6a6", "#ff6f91", "#6c4bd8", "#f26419", "#3d9970"]
@@ -34,6 +39,21 @@ class GameMaster(Protocol):
     async def prompts(self, n: int, audience: Audience, avoid: list[str]) -> list[str]: ...
 
     async def judge(self, prompt: str, answers: dict[str, str], audience: Audience) -> Judgement: ...
+
+    async def facts(self, n: int, audience: Audience, avoid: list[str]) -> list[Fact]: ...
+
+    async def emoji(self, topics: list[str], n: int, audience: Audience, avoid: list[str]) -> list[EmojiPuzzle]: ...
+
+    async def most_likely(self, n: int, audience: Audience, avoid: list[str]) -> list[str]: ...
+
+
+GAME_NAMES = {
+    "trivia": "Trivia",
+    "hot_take": "Hot Take",
+    "fake_out": "Fake Out",
+    "most_likely": "Most Likely To",
+    "emoji": "Emoji Decode",
+}
 
 
 class GameError(Exception):
@@ -69,7 +89,11 @@ class Room:
     prompts: list[str] = field(default_factory=list)
     submissions: dict[str, dict] = field(default_factory=dict)
     judgement: dict[str, dict] = field(default_factory=dict)
+    facts: list[Fact] = field(default_factory=list)
+    puzzles: list[EmojiPuzzle] = field(default_factory=list)
+    options: list[dict] = field(default_factory=list)  # Fake Out: the truth and the fakes, shuffled
     seen: list[str] = field(default_factory=list)  # avoid repeats across games in this room
+    rng: random.Random = field(default_factory=random.Random)
     notice: str = ""
     version: int = 0
     last_activity: float = 0.0
@@ -117,8 +141,13 @@ class Room:
     async def start(self, game: GameKind, rounds: int, topics: list[str], audience: Audience, now: float) -> None:
         if self.phase not in ("lobby", "final"):
             raise GameError("A game is already running.")
-        if len(self.players) < (1 if game == "trivia" else 2):
-            raise GameError("Hot Take needs at least two players." if game == "hot_take" else "Waiting for players.")
+        need = MIN_PLAYERS.get(game)
+        if need is None:
+            raise GameError("Pick a game.")
+        if len(self.players) < need:
+            raise GameError(
+                "Waiting for players." if need == 1 else f"{GAME_NAMES[game]} needs at least {need} players."
+            )
         self.game, self.audience = game, audience
         self.topics = [mask_profanity(t)[:30] for t in topics if t.strip()][:4] or ["general knowledge"]
         self.total_rounds = max(1, min(rounds, 15))
@@ -128,14 +157,24 @@ class Room:
         self.phase, self.notice = "preparing", "The game master is writing your questions…"
         self._touch(now)
         try:
+            n = self.total_rounds
             if game == "trivia":
-                self.questions = await self.gm.trivia(self.topics, self.total_rounds, audience, self.seen)
-                self.total_rounds = min(self.total_rounds, len(self.questions))
-                self.seen += [q.prompt for q in self.questions]
+                self.questions = await self.gm.trivia(self.topics, n, audience, self.seen)
+                got = [q.prompt for q in self.questions]
+            elif game == "hot_take":
+                self.prompts = await self.gm.prompts(n, audience, self.seen)
+                got = list(self.prompts)
+            elif game == "fake_out":
+                self.facts = await self.gm.facts(n, audience, self.seen)
+                got = [f.prompt for f in self.facts]
+            elif game == "emoji":
+                self.puzzles = await self.gm.emoji(self.topics, n, audience, self.seen)
+                got = [p.answer for p in self.puzzles]
             else:
-                self.prompts = await self.gm.prompts(self.total_rounds, audience, self.seen)
-                self.total_rounds = min(self.total_rounds, len(self.prompts))
-                self.seen += self.prompts
+                self.prompts = await self.gm.most_likely(n, audience, self.seen)
+                got = list(self.prompts)
+            self.total_rounds = min(n, len(got))
+            self.seen += got
         except Exception:
             self.phase = "lobby"
             self.notice = "The game master couldn't write this game. Try again or pick other topics."
@@ -149,7 +188,9 @@ class Room:
 
     async def advance(self, now: float) -> None:
         """Move to the next phase (host's Next button, or a timer)."""
-        if self.phase in ("question", "writing"):
+        if self.phase == "writing" and self.game == "fake_out":
+            self._open_vote(now)
+        elif self.phase in ("question", "writing", "voting"):
             await self._close_round(now)
         elif self.phase in ("reveal", "results"):
             if self.round_no >= self.total_rounds:
@@ -176,9 +217,33 @@ class Room:
             self.submissions[player_id] = {"choice": choice, "at": now}
         elif self.phase == "writing":
             text = str(payload.get("text", "")).strip()
-            if not 1 <= len(text) <= 120:
-                raise GameError("Write something between 1 and 120 characters.")
-            self.submissions[player_id] = {"text": mask_profanity(text), "at": now}  # can be edited until time
+            limit = 60 if self.game in ("fake_out", "emoji") else 120
+            if not 1 <= len(text) <= limit:
+                raise GameError(f"Write something between 1 and {limit} characters.")
+            if self.game == "emoji":
+                if player_id in self.submissions:
+                    raise GameError("You've already locked in a guess.")
+            elif self.game == "fake_out":
+                fact = self.facts[self.round_no - 1]
+                if matches(text, fact.answer, fact.aliases):
+                    raise GameError("That's actually the real answer! Write a fake one to fool the others.")
+            self.submissions[player_id] = {"text": mask_profanity(text), "at": now}  # editable until time (not Emoji)
+        elif self.phase == "voting":
+            vote = str(payload.get("vote", ""))
+            if player_id in self.submissions:
+                raise GameError("You've already voted.")
+            if self.game == "most_likely":
+                if vote not in self.players:
+                    raise GameError("Vote for someone in the room.")
+                if vote == player_id:
+                    raise GameError("You can't vote for yourself.")
+            else:
+                option = next((o for o in self.options if o["key"] == vote), None)
+                if option is None:
+                    raise GameError("Pick one of the answers.")
+                if player_id in option["authors"]:
+                    raise GameError("That's your own fake! Pick another.")
+            self.submissions[player_id] = {"vote": vote, "at": now}
         else:
             raise GameError("Not taking answers right now.")
         self._touch(now)
@@ -187,7 +252,9 @@ class Room:
         """Called regularly by the server. Returns True if the state changed."""
         before = self.version
         active = self._active_ids()
-        everyone_in = self.phase in ("question", "writing") and bool(active) and active <= set(self.submissions)
+        everyone_in = (
+            self.phase in ("question", "writing", "voting") and bool(active) and active <= set(self.submissions)
+        )
         if self.deadline is not None and (now >= self.deadline or everyone_in):
             await self.advance(now)
         return self.version != before
@@ -203,14 +270,83 @@ class Room:
         for p in self.players.values():
             p.last_points = 0
         self.round_started = now
+        self.options = []
         if self.game == "trivia":
             self.phase, self.deadline = "question", now + QUESTION_SECONDS
+        elif self.game == "most_likely":
+            self.phase, self.deadline = "voting", now + VOTING_SECONDS
         else:
-            self.phase, self.deadline = "writing", now + WRITING_SECONDS
+            seconds = {"fake_out": FAKE_SECONDS, "emoji": EMOJI_SECONDS}.get(self.game, WRITING_SECONDS)
+            self.phase, self.deadline = "writing", now + seconds
         self.notice = ""
         self._touch(now)
 
+    def _open_vote(self, now: float) -> None:
+        """Fake Out: shuffle the real answer in with everyone's fakes (identical fakes share one card)."""
+        fact = self.facts[self.round_no - 1]
+        cards: dict[str, dict] = {normalise(fact.answer): {"text": fact.answer, "authors": [], "truth": True}}
+        for pid, sub in self.submissions.items():
+            if pid not in self.players:
+                continue
+            key = normalise(sub["text"])
+            text = _match_style(sub["text"], fact.answer)
+            card = cards.setdefault(key, {"text": text, "authors": [], "truth": False})
+            if not card["truth"]:
+                card["authors"].append(pid)
+        if len(cards) == 1:  # nobody wrote a fake: just show the answer
+            self.options = [{"key": "o0", **next(iter(cards.values()))}]
+            self.submissions = {}
+            self.phase, self.deadline = "results", now + RESULTS_SECONDS
+            self._touch(now)
+            return
+        shuffled = list(cards.values())
+        self.rng.shuffle(shuffled)
+        self.options = [{"key": f"o{i}", **c} for i, c in enumerate(shuffled)]
+        self.submissions = {}
+        self.phase, self.deadline = "voting", now + VOTING_SECONDS
+        self._touch(now)
+
+    def _award(self, pid: str, points: int) -> None:
+        if pid in self.players and points:
+            self.players[pid].score += points
+            self.players[pid].last_points += points
+
     async def _close_round(self, now: float) -> None:
+        if self.game == "fake_out":
+            for pid, sub in self.submissions.items():
+                card = next((o for o in self.options if o["key"] == sub["vote"]), None)
+                if card is None:
+                    continue
+                if card["truth"]:
+                    self._award(pid, 500)
+                else:
+                    for author in card["authors"]:
+                        self._award(author, 250)
+            self.phase, self.deadline = "results", now + RESULTS_SECONDS
+            self._touch(now)
+            return
+        if self.game == "most_likely":
+            counts: dict[str, int] = {}
+            for sub in self.submissions.values():
+                counts[sub["vote"]] = counts.get(sub["vote"], 0) + 1
+            if counts:
+                top = max(counts.values())
+                for pid, sub in self.submissions.items():
+                    if counts[sub["vote"]] == top:
+                        self._award(pid, 300)  # you read the room
+            self.phase, self.deadline = "results", now + RESULTS_SECONDS
+            self._touch(now)
+            return
+        if self.game == "emoji":
+            puzzle = self.puzzles[self.round_no - 1]
+            for pid, sub in self.submissions.items():
+                sub["correct"] = matches(sub["text"], puzzle.answer, puzzle.aliases)
+                if sub["correct"]:
+                    elapsed = max(0.0, sub["at"] - self.round_started)
+                    self._award(pid, 500 + round(500 * max(0.0, 1 - elapsed / EMOJI_SECONDS)))
+            self.phase, self.deadline = "reveal", now + RESULTS_SECONDS
+            self._touch(now)
+            return
         if self.game == "trivia":
             q = self.questions[self.round_no - 1]
             for pid, sub in self.submissions.items():
@@ -279,13 +415,61 @@ class Room:
                 for p in players
             ],
         }
-        if self.phase in ("question", "reveal") and self.questions:
+        if self.game == "trivia" and self.phase in ("question", "reveal") and self.questions:
             q = self.questions[self.round_no - 1]
             base["question"] = {"prompt": q.prompt, "options": q.options, "category": q.category}
             if self.phase == "reveal":
                 base["question"] |= {"answer_index": q.answer_index, "explanation": q.explanation}
                 base["picks"] = {pid: s["choice"] for pid, s in self.submissions.items()}
-        if self.phase in ("writing", "judging", "results") and self.prompts:
+        if self.game == "fake_out" and self.facts and self.phase in ("writing", "voting", "results"):
+            fact = self.facts[self.round_no - 1]
+            base["prompt"] = fact.prompt
+            if self.phase == "voting":
+                base["options"] = [
+                    {"key": o["key"], "text": o["text"], "mine": viewer in o["authors"]} for o in self.options
+                ]
+            if self.phase == "results":
+                base["answer"] = fact.answer
+                base["cards"] = [
+                    {
+                        "text": o["text"],
+                        "truth": o["truth"],
+                        "authors": o["authors"],
+                        "voters": [pid for pid, s in self.submissions.items() if s["vote"] == o["key"]],
+                    }
+                    for o in sorted(self.options, key=lambda o: (not o["truth"], o["text"]))
+                ]
+            if viewer != "host" and viewer in self.submissions:
+                base["my_submission"] = {k: v for k, v in self.submissions[viewer].items() if k != "at"}
+            return base
+        if self.game == "most_likely" and self.prompts and self.phase in ("voting", "results"):
+            base["prompt"] = f"Who's most likely to {self.prompts[self.round_no - 1]}?"
+            if self.phase == "results":
+                tally: dict[str, list[str]] = {}
+                for voter, s in self.submissions.items():
+                    tally.setdefault(s["vote"], []).append(voter)
+                base["tally"] = [
+                    {"player_id": pid, "voters": voters}
+                    for pid, voters in sorted(tally.items(), key=lambda kv: -len(kv[1]))
+                    if pid in self.players
+                ]
+            if viewer != "host" and viewer in self.submissions:
+                base["my_submission"] = {"vote": self.submissions[viewer]["vote"]}
+            return base
+        if self.game == "emoji" and self.puzzles and self.phase in ("writing", "reveal"):
+            puzzle = self.puzzles[self.round_no - 1]
+            base["emoji"] = {"emojis": puzzle.emojis, "category": puzzle.category}
+            if self.phase == "reveal":
+                base["answer"] = puzzle.answer
+                base["guesses"] = [
+                    {"player_id": pid, "text": s["text"], "correct": s.get("correct", False)}
+                    for pid, s in self.submissions.items()
+                    if pid in self.players
+                ]
+            if viewer != "host" and viewer in self.submissions:
+                base["my_submission"] = {k: v for k, v in self.submissions[viewer].items() if k != "at"}
+            return base
+        if self.game == "hot_take" and self.phase in ("writing", "judging", "results") and self.prompts:
             base["prompt"] = self.prompts[self.round_no - 1]
             if self.phase == "results":
                 base["answers"] = [
@@ -297,6 +481,16 @@ class Room:
         if viewer != "host" and viewer in self.submissions:
             base["my_submission"] = {k: v for k, v in self.submissions[viewer].items() if k != "at"}
         return base
+
+
+def _match_style(fake: str, truth: str) -> str:
+    """Make a fake look like the real answer, so "a kerfuffle" next to "hands" doesn't give the truth away."""
+    text = fake.strip().rstrip(".!")
+    if not re.match(r"(?i)(a|an|the)\s", truth):
+        text = re.sub(r"(?i)^(a|an|the)\s+", "", text) or text
+    if truth[:1].islower() and text[:1].isupper() and not text[1:2].isupper():
+        text = text[0].lower() + text[1:]
+    return text
 
 
 class RoomManager:
